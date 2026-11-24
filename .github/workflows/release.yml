@@ -40,5 +40,11 @@ jobs:
         run: |
           $version = (Get-Content -Raw -LiteralPath VERSION).Trim()
           $asset = "dist/MaicongMouseStatus-$version-windows-x64.zip"
+          $releaseTags = gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases" --jq '.[] | .tag_name'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($releaseTags -ccontains $env:GITHUB_REF_NAME) {
+            Write-Host 'The release already exists.'
+            exit 0
+          }
           gh release create $env:GITHUB_REF_NAME $asset "$asset.sha256" --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title $env:GITHUB_REF_NAME --notes-from-tag
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -223,6 +223,11 @@ internal static class ProtocolTests
             var snap = reopened.Snapshot(begin);
             Check(snap.Count == 2 && snap[0].Dpi == 1600, "History with DPI persists after restart while sleeping");
 
+            var upgraded = new HistoryStore(folder);
+            var upgradedReading = new MouseStatus { Battery = 79, Rate = 2000, LegacyDeviceKey = "device-id" };
+            upgraded.Record("usb", "new-device-id", upgradedReading, 30, begin.AddSeconds(70));
+            Check(upgraded.Snapshot(begin).Count == 3, "Upgrade can read history written under the previous USB key");
+
             reopened.Record("ble", "different-device", reading, 30, begin.AddSeconds(75));
             Check(reopened.Snapshot(begin).Count == 1, "Bluetooth device maintains isolated history");
         }

@@ -23,6 +23,7 @@ internal sealed class MouseStatus
     internal bool? BluetoothConnected;
     internal string DeviceName;
     internal string DeviceKey;
+    internal string LegacyDeviceKey;
 
     internal string DpiDisplay
     {
@@ -66,6 +67,7 @@ internal static class Receiver
                     string namePart = (status.DeviceName ?? "MCHOSE").ToUpperInvariant();
                     status.DeviceKey = string.Format(CultureInfo.InvariantCulture, "usb:3837:{0:X4}:{1:X2}:{2}",
                         receiver, battery[10], namePart);
+                    status.LegacyDeviceKey = "usb:" + path.ToUpperInvariant() + ":" + battery[10].ToString("X2", CultureInfo.InvariantCulture);
                     status.Charging = MouseProtocol.Charging(battery);
 
                     var profile = Query(handle, MouseProtocol.Request(MouseProtocol.CurrentProfile), MouseProtocol.CurrentProfile, 9, trace);

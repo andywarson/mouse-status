@@ -84,6 +84,7 @@ internal sealed class HistoryStore
     private readonly string folder;
     private string source;
     private string activeKey;
+    private string legacyKey;
     private string segment = Guid.NewGuid().ToString("N");
     private HistorySample last;
     private DateTime? lastPrunedDay;
@@ -101,6 +102,7 @@ internal sealed class HistoryStore
         {
             source = deviceSource;
             activeKey = source == "usb" ? PreviousUsbKey() : null;
+            legacyKey = null;
             BeginSegment();
         }
         if (!string.IsNullOrEmpty(identity))
@@ -109,11 +111,14 @@ internal sealed class HistoryStore
             if (key != activeKey)
             {
                 activeKey = key;
+                legacyKey = null;
                 BeginSegment();
                 if (source == "usb") RememberUsbKey(key);
             }
         }
         if (activeKey == null) return;
+        if (source == "usb" && !string.IsNullOrEmpty(status.LegacyDeviceKey))
+            legacyKey = Hash(status.LegacyDeviceKey);
         if (!loaded) Load(now);
 
         var sample = new HistorySample(now, activeKey, segment, status.Battery, status.Rate, status.Charging, interval, status.Dpi);
@@ -185,7 +190,8 @@ internal sealed class HistoryStore
     internal IList<HistorySample> Snapshot(DateTime from)
     {
         if (activeKey == null) return new HistorySample[0];
-        return samples.Where(sample => sample.Device == activeKey && sample.Time >= from.AddMinutes(-11))
+        var earliest = from.AddMinutes(-11);
+        return samples.Where(sample => (sample.Device == activeKey || sample.Device == legacyKey) && sample.Time >= earliest)
                       .OrderBy(sample => sample.Time).ToArray();
     }
 
