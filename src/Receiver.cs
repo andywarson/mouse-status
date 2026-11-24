@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,12 +13,27 @@ internal sealed class MouseStatus
 {
     internal int? Battery;
     internal int? Rate;
+    internal int? Dpi;
+    internal int? DpiY;
+    internal int? DpiStage;
+    internal int? DpiStageCount;
     internal bool? Charging;
     internal bool ReceiverFound;
     internal bool IsBluetooth;
     internal bool? BluetoothConnected;
     internal string DeviceName;
     internal string DeviceKey;
+
+    internal string DpiDisplay
+    {
+        get
+        {
+            if (!Dpi.HasValue) return null;
+            if (DpiY.HasValue && DpiY.Value != Dpi.Value)
+                return Dpi.Value.ToString(CultureInfo.InvariantCulture) + "×" + DpiY.Value.ToString(CultureInfo.InvariantCulture);
+            return Dpi.Value.ToString(CultureInfo.InvariantCulture);
+        }
+    }
 }
 
 internal static class Receiver
@@ -30,7 +46,7 @@ internal static class Receiver
         var status = new MouseStatus();
         foreach (string path in Paths())
         {
-            int receiver = new[] {0x1018, 0x1014, 0x1016}.FirstOrDefault(pid =>
+            int receiver = new[] { 0x1018, 0x1014, 0x1016 }.FirstOrDefault(pid =>
                 path.IndexOf("vid_3837&pid_" + pid.ToString("x4") + "&mi_", StringComparison.OrdinalIgnoreCase) >= 0);
             if (receiver == 0) continue;
             status.ReceiverFound = true;
@@ -43,13 +59,38 @@ internal static class Receiver
                     status.DeviceName = product.ToString().Trim();
                 try
                 {
-                    var battery = Query(handle, MouseProtocol.DeviceInfo, 14, trace);
+                    var battery = Query(handle, MouseProtocol.Request(MouseProtocol.DeviceInfo), MouseProtocol.DeviceInfo, 14, trace);
                     status.Battery = MouseProtocol.Battery(battery, receiver);
                     if (!status.Battery.HasValue) continue;
-                    status.DeviceKey = "usb:" + path.ToUpperInvariant() + ":" + battery[10].ToString("X2");
+
+                    string namePart = (status.DeviceName ?? "MCHOSE").ToUpperInvariant();
+                    status.DeviceKey = string.Format(CultureInfo.InvariantCulture, "usb:3837:{0:X4}:{1:X2}:{2}",
+                        receiver, battery[10], namePart);
                     status.Charging = MouseProtocol.Charging(battery);
-                    status.Rate = MouseProtocol.Rate(Query(handle, MouseProtocol.CurrentProfile, 9, trace));
+
+                    var profile = Query(handle, MouseProtocol.Request(MouseProtocol.CurrentProfile), MouseProtocol.CurrentProfile, 9, trace);
+                    status.Rate = MouseProtocol.Rate(profile);
                     if (receiver == 0x1016 && status.Rate > 1000) status.Rate = null;
+
+                    int? profileIndex = MouseProtocol.ProfileIndex(profile);
+                    if (profileIndex.HasValue)
+                    {
+                        var dpiXFrame = Query(handle, MouseProtocol.DpiRequest(profileIndex.Value, 0), MouseProtocol.DpiTable, 17, trace);
+                        var dpiX = MouseProtocol.Dpi(dpiXFrame, profileIndex.Value, 0);
+                        if (dpiX != null)
+                        {
+                            status.Dpi = dpiX.Value;
+                            status.DpiY = dpiX.DualAxis ? (int?)null : dpiX.Value;
+                            status.DpiStage = dpiX.Stage;
+                            status.DpiStageCount = dpiX.StageCount;
+                            if (dpiX.DualAxis)
+                            {
+                                var dpiYFrame = Query(handle, MouseProtocol.DpiRequest(profileIndex.Value, 1), MouseProtocol.DpiTable, 17, trace);
+                                var dpiY = MouseProtocol.Dpi(dpiYFrame, profileIndex.Value, 1);
+                                if (dpiY != null) status.DpiY = dpiY.Value;
+                            }
+                        }
+                    }
                     return status;
                 }
                 catch (IOException e) { Trace(trace, e.Message); }
@@ -70,7 +111,7 @@ internal static class Receiver
                 return new string[0];
             var list = new char[size];
             uint result = CM_Get_Device_Interface_List(ref guid, null, list, size, 0);
-            if (result == 0) return new string(list).Split(new[] {'\0'}, StringSplitOptions.RemoveEmptyEntries);
+            if (result == 0) return new string(list).Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
             if (result != 0x1A) break;
         }
         return new string[0];
@@ -94,20 +135,24 @@ internal static class Receiver
         finally { HidD_FreePreparsedData(data); }
     }
 
-    private static byte[] Query(SafeFileHandle handle, ushort command, int minimum, Action<string> trace)
+    private static byte[] Query(SafeFileHandle handle, byte[] request, ushort command, int minimum, Action<string> trace)
     {
         HidD_FlushQueue(handle);
-        byte[] request = MouseProtocol.Request(command);
         if (Transfer(handle, request, true, 1000) != request.Length)
             throw new IOException("Short HID write.");
         var clock = Stopwatch.StartNew();
-        while (clock.ElapsedMilliseconds < 2000)
+        while (clock.ElapsedMilliseconds < 1500)
         {
             var reply = new byte[64];
-            int remaining = Math.Max(1, 2000 - (int)clock.ElapsedMilliseconds);
+            int remaining = Math.Max(1, 1500 - (int)clock.ElapsedMilliseconds);
             int size = Transfer(handle, reply, false, remaining);
             Trace(trace, string.Format("{0:X4} ({1}): {2}", command, size, BitConverter.ToString(reply)));
-            if (size == 64 && MouseProtocol.Matches(reply, command, minimum)) return reply;
+            if (size == 0) break;
+            if (size == 64)
+            {
+                if (MouseProtocol.IsOfflineReply(reply, command)) return null;
+                if (MouseProtocol.Matches(reply, command, minimum)) return reply;
+            }
         }
         return null;
     }

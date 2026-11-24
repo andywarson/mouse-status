@@ -1,0 +1,21 @@
+name: Bug report
+description: Report a reproducible problem
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version and Windows build
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Mouse model and connection type
+      description: Give the USB VID/PID if relevant. Omit serial numbers and Bluetooth addresses.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened and what did you expect?
+      description: Include the steps to reproduce. Redact credentials and personal data from attachments.
+    validations:
+      required: true

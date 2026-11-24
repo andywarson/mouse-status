@@ -1,0 +1,32 @@
+# Build and release outputs
+*.exe
+*.dll
+*.pdb
+/bin/
+/obj/
+/dist/
+/artifacts/
+/outputs/
+/src/app.ico
+
+# Local audit staging and editor settings
+/.release-*/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.tmp
+*.log
+
+# Private settings, diagnostics and key material
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.reg
+*.dmp
+*.tsv
+last-usb.txt
