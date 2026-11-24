@@ -27,6 +27,7 @@ jobs:
         with:
           name: windows-x64
           path: |
-            dist/*.zip
-            dist/*.sha256
+            dist/*-setup.exe
+            dist/*-portable.exe
+            dist/*-sha256.txt
           if-no-files-found: error

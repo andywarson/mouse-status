@@ -131,12 +131,12 @@ if ($version -notmatch '^(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]
     throw 'VERSION must contain a numeric semantic version supported by Windows file metadata.'
 }
 $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
-$binary = Join-Path (Resolve-Path -LiteralPath $OutputDirectory).Path 'MaicongMouseStatus.exe'
+$binary = Join-Path (Resolve-Path -LiteralPath $OutputDirectory).Path 'MouseStatus.exe'
 $assemblyInfo = Join-Path ([IO.Path]::GetTempPath()) ('MaicongVersion-' + [Guid]::NewGuid().ToString('N') + '.cs')
 try {
     @"
-[assembly: System.Reflection.AssemblyTitle("MaicongMouseStatus")]
-[assembly: System.Reflection.AssemblyProduct("MaicongMouseStatus")]
+[assembly: System.Reflection.AssemblyTitle("Mouse Status")]
+[assembly: System.Reflection.AssemblyProduct("Mouse Status")]
 [assembly: System.Reflection.AssemblyVersion("$version.0")]
 [assembly: System.Reflection.AssemblyFileVersion("$version.0")]
 [assembly: System.Reflection.AssemblyInformationalVersion("$version")]

@@ -1,8 +1,8 @@
-# 鼠标状态 · MaicongMouseStatus
+# Mouse Status · 鼠标状态
 
 [English](README.en.md)
 
-鼠标状态是一款 Windows 11 x64 桌面工具，可以在悬浮窗、任务栏状态条和系统托盘查看无线鼠标的电量、充电状态、DPI 与回报率。可读字段取决于连接方式和设备。应用通过 Windows 桌面与硬件接口工作，日常使用无需 API Key 或厂商账号。
+Mouse Status 是一款 Windows 11 x64 桌面工具，目标是为不同品牌和型号的鼠标提供统一的状态显示，目前优先适配迈从（MCHOSE）。可在悬浮窗、任务栏状态条和系统托盘查看设备能提供的电量、充电状态、DPI 与回报率。日常使用无需 API Key 或厂商账号。
 
 ## 功能
 
@@ -13,12 +13,12 @@
 
 ## 安装和使用
 
-1. 在 **Releases** 下载对应版本的 `MaicongMouseStatus-<版本>-windows-x64.zip` 与 `.sha256` 文件。
-2. 在 PowerShell 验证 ZIP 的 SHA-256，和校验文件中的值比较，再解压并打开 `MaicongMouseStatus.exe`。
+1. 在 **Releases** 下载所需的 Windows x64 EXE。**Setup** 双击安装，完成后可直接启动，之后也可从开始菜单打开。**Portable** 双击直接运行，无需安装和解压。
+2. 在 PowerShell 计算所选文件的 SHA-256，和同一版本校验文件中对应的行比较。
 
    ```powershell
-   Get-FileHash -Algorithm SHA256 .\MaicongMouseStatus-1.0.0-windows-x64.zip
-   Get-Content .\MaicongMouseStatus-1.0.0-windows-x64.zip.sha256
+   Get-FileHash -Algorithm SHA256 .\MouseStatus-1.0.0-windows-x64-portable.exe
+   Get-Content .\MouseStatus-1.0.0-sha256.txt
    ```
 
 3. 从托盘图标打开设置。在「常规」选择自动识别 2.4G 接收器，或选择 Windows 中已配对的蓝牙设备。
@@ -34,7 +34,7 @@
 
 2.4G 协议适配覆盖 MCHOSE 接收器 ID `3837:1018`、`3837:1014` 和 `3837:1016`。实机验证使用 `3837:1018`，其余两个 ID 暂按实验性兼容处理。蓝牙低功耗设备需由 Windows 配对，电量取决于设备是否公开标准 GATT 电池服务。蓝牙模式提供连接状态和可读取的电量。
 
-配置保存在当前 Windows 用户注册表。历史文件位于 `%LocalAppData%\MaicongMouseStatus\history`，日文件按 UTC 日期清理，超过 14 天的文件会被移除。统计基于有效的相邻读数。关机、断连和过长的采样间隔留空。
+Setup 和 Portable 共享当前 Windows 用户的设置和历史，便于切换使用。历史文件位于 `%LocalAppData%\MaicongMouseStatus\history`，日文件按 UTC 日期清理，超过 14 天的文件会被移除。统计基于有效的相邻读数。关机、断连和过长的采样间隔留空。
 
 ## 常见问题
 
@@ -56,6 +56,6 @@
 .\Package.ps1
 ```
 
-可执行文件默认生成在项目根目录，发布 ZIP 和 SHA-256 生成在 `dist`。桌面自测需本地交互式 Windows 会话，详见 [贡献指南](CONTRIBUTING.md)。
+可执行文件默认生成在项目根目录，Setup、Portable 和 SHA-256 生成在 `dist`。首次打包会下载并校验固定版本的 Inno Setup 编译器。也可用 `Package.ps1 -InstallerCompiler <ISCC.exe 路径>` 指定本地编译器。桌面自测需本地交互式 Windows 会话，详见 [贡献指南](CONTRIBUTING.md)。
 
 开源许可证采用方案等待维护者批准。安全问题使用 [安全政策](SECURITY.md) 中的私密渠道。

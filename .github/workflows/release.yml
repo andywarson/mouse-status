@@ -39,12 +39,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $version = (Get-Content -Raw -LiteralPath VERSION).Trim()
-          $asset = "dist/MaicongMouseStatus-$version-windows-x64.zip"
+          $prefix = "dist/MouseStatus-$version-windows-x64"
+          $assets = @("$prefix-setup.exe", "$prefix-portable.exe", "dist/MouseStatus-$version-sha256.txt")
           $releaseTags = gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases" --jq '.[] | .tag_name'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ($releaseTags -ccontains $env:GITHUB_REF_NAME) {
             Write-Host 'The release already exists.'
             exit 0
           }
-          gh release create $env:GITHUB_REF_NAME $asset "$asset.sha256" --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title $env:GITHUB_REF_NAME --notes-from-tag
+          gh release create $env:GITHUB_REF_NAME @assets --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title "Mouse Status $version" --notes-from-tag
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

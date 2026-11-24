@@ -11,9 +11,9 @@ public static class VerifyWin32 {
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $exePath = if ($args.Count -gt 0) { (Resolve-Path -LiteralPath $args[0]).Path }
-           else { Join-Path $repoRoot 'MaicongMouseStatus.exe' }
+           else { Join-Path $repoRoot 'MouseStatus.exe' }
 if (!(Test-Path $exePath)) {
-    throw "MaicongMouseStatus.exe not found at $exePath. Run .\Build.ps1 first."
+    throw "Mouse Status executable not found at $exePath. Run .\Build.ps1 first."
 }
 
 $root = [Windows.Automation.AutomationElement]::RootElement
@@ -46,9 +46,9 @@ function Invoke-Button($el) {
     }
 }
 
-$existing = Get-Process MaicongMouseStatus -ErrorAction SilentlyContinue
+$existing = Get-Process -Name 'MaicongMouseStatus','MouseStatus','MouseStatus-*-portable' -ErrorAction SilentlyContinue
 if ($existing) {
-    throw 'Close any running MaicongMouseStatus instance before starting the interactive test.'
+    throw 'Close any running Mouse Status instance before starting the interactive test.'
 }
 
 $proc = Start-Process -FilePath $exePath -PassThru -WindowStyle Hidden
